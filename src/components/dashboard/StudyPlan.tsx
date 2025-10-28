@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 interface StudyPlanProps {
   userId: string;
@@ -109,10 +110,10 @@ export function StudyPlan({ userId }: StudyPlanProps) {
             </Button>
 
             {plan && (
-              <div className="mt-4 p-4 bg-secondary rounded-lg">
-                <h4 className="font-semibold mb-2">Your Personalized Plan:</h4>
-                <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-wrap">{plan}</p>
+              <div className="mt-4 p-4 bg-secondary/50 rounded-lg">
+                <h4 className="font-semibold mb-3 text-lg">Your Personalized Plan:</h4>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown>{plan}</ReactMarkdown>
                 </div>
               </div>
             )}
