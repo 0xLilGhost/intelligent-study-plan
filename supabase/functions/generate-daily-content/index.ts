@@ -20,16 +20,14 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
-    // Get the study plan and related goal
+    // Get the study plan
     const { data: plan } = await supabaseClient
       .from('study_plans')
       .select('*, study_goals(*)')
       .eq('id', planId)
       .single();
 
-    if (!plan) throw new Error('Plan not found');
-
-    const goal = plan.study_goals;
+    if (!plan) throw new Error('Study plan not found');
 
     // Call Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -46,29 +44,24 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful study advisor. Create detailed, comprehensive daily study content.'
+            content: 'You are an expert educational content creator. Generate detailed, engaging daily study content.'
           },
           {
             role: 'user',
-            content: `Based on this study plan and goal, create detailed study content for Day ${dayNumber}:
+            content: `Based on this study plan, create detailed study content for Day ${dayNumber}:
 
-Goal: ${goal.title}
-Description: ${goal.description || 'Not provided'}
-Priority: ${goal.priority}
+Goal: ${plan.study_goals.title}
+Study Plan: ${plan.plan_content}
 
-Study Plan Overview:
-${plan.plan_content}
+Generate comprehensive content for Day ${dayNumber} including:
+1. **Learning Objectives**: What the student should accomplish today
+2. **Core Concepts**: Detailed explanations of key topics with examples
+3. **Step-by-Step Guide**: Clear instructions for what to study and in what order
+4. **Practice Exercises**: 3-5 questions or problems to reinforce learning
+5. **Key Takeaways**: Summary of the most important points
+6. **Real-World Applications**: How this knowledge applies in practice
 
-Create comprehensive study content for Day ${dayNumber} that includes:
-1. Learning objectives for the day
-2. Detailed explanations of key concepts
-3. Definitions and terminology
-4. Step-by-step examples with solutions
-5. Practice exercises (with answers)
-6. Summary of key takeaways
-7. Tips for retention and understanding
-
-Make this content detailed enough that the student can study entirely from it without needing external materials.`
+Make it detailed enough that the student can learn directly from this content without needing textbooks.`
           }
         ],
       }),
@@ -84,14 +77,20 @@ Make this content detailed enough that the student can study entirely from it wi
     const content = aiData.choices[0].message.content;
 
     // Save the daily content
-    await supabaseClient.from('daily_study_content').insert({
-      plan_id: planId,
-      user_id: plan.user_id,
-      day_number: dayNumber,
-      content: content,
-    });
+    const { data: dailyContent, error: insertError } = await supabaseClient
+      .from('daily_study_content')
+      .insert({
+        plan_id: planId,
+        user_id: plan.user_id,
+        day_number: dayNumber,
+        content: content,
+      })
+      .select()
+      .single();
 
-    return new Response(JSON.stringify({ content }), {
+    if (insertError) throw insertError;
+
+    return new Response(JSON.stringify({ content: dailyContent }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {

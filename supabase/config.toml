@@ -2,3 +2,6 @@ project_id = "xwzrdkchlkiywnnvbcnf"
 
 [functions.generate-plan]
 verify_jwt = true
+
+[functions.generate-daily-content]
+verify_jwt = true

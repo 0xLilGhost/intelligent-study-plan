@@ -7,7 +7,6 @@ import { MapPin, Loader2, Sparkles, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 interface StudyPlanProps {
   userId: string;
@@ -23,6 +22,7 @@ interface DailyContent {
   id: string;
   day_number: number;
   content: string;
+  created_at: string;
 }
 
 export function StudyPlan({ userId }: StudyPlanProps) {
@@ -31,10 +31,9 @@ export function StudyPlan({ userId }: StudyPlanProps) {
   const [plan, setPlan] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [dayNumber, setDayNumber] = useState(1);
   const [dailyContent, setDailyContent] = useState<DailyContent[]>([]);
+  const [dayNumber, setDayNumber] = useState<number>(1);
   const [loadingDaily, setLoadingDaily] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,18 +54,6 @@ export function StudyPlan({ userId }: StudyPlanProps) {
     }
   };
 
-  const loadDailyContent = async (currentPlanId: string) => {
-    const { data } = await supabase
-      .from('daily_study_content')
-      .select('*')
-      .eq('plan_id', currentPlanId)
-      .order('day_number', { ascending: true });
-
-    if (data) {
-      setDailyContent(data);
-    }
-  };
-
   const generatePlan = async () => {
     if (!selectedGoalId) return;
 
@@ -80,7 +67,7 @@ export function StudyPlan({ userId }: StudyPlanProps) {
       
       setPlan(data.plan);
       
-      // Get the plan ID to enable daily content generation
+      // Get the plan ID to use for daily content generation
       const { data: planData } = await supabase
         .from('study_plans')
         .select('id')
@@ -109,6 +96,18 @@ export function StudyPlan({ userId }: StudyPlanProps) {
     }
   };
 
+  const loadDailyContent = async (plan_id: string) => {
+    const { data } = await supabase
+      .from('daily_study_content')
+      .select('*')
+      .eq('plan_id', plan_id)
+      .order('day_number', { ascending: true });
+    
+    if (data) {
+      setDailyContent(data);
+    }
+  };
+
   const generateDailyContent = async () => {
     if (!planId || !dayNumber) return;
 
@@ -120,12 +119,10 @@ export function StudyPlan({ userId }: StudyPlanProps) {
 
       if (error) throw error;
       
-      await loadDailyContent(planId);
-      setSelectedDay(dayNumber);
-      
+      setDailyContent(prev => [...prev, data.content]);
       toast({
-        title: 'Daily content generated!',
-        description: `Study content for Day ${dayNumber} is ready.`,
+        title: `Day ${dayNumber} content generated!`,
+        description: 'Your daily study guide is ready.',
       });
     } catch (error: any) {
       toast({
@@ -187,70 +184,53 @@ export function StudyPlan({ userId }: StudyPlanProps) {
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 border rounded-lg">
+                <div className="mt-6 p-4 border-2 border-primary/20 rounded-lg bg-card">
                   <h4 className="font-semibold mb-3 text-lg flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-primary" />
                     Daily Study Content
                   </h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Generate detailed study content for specific days to guide your learning
+                    Generate detailed study content for specific days in your plan
                   </p>
                   
                   <div className="flex gap-2 mb-4">
-                    <div className="flex-1">
-                      <Label htmlFor="dayNumber">Day Number</Label>
-                      <Input
-                        id="dayNumber"
-                        type="number"
-                        min="1"
-                        value={dayNumber}
-                        onChange={(e) => setDayNumber(parseInt(e.target.value))}
-                        placeholder="Enter day number"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={generateDailyContent} disabled={loadingDaily}>
-                        {loadingDaily ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Generate
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={dayNumber}
+                      onChange={(e) => setDayNumber(parseInt(e.target.value) || 1)}
+                      placeholder="Day number"
+                      className="w-32"
+                    />
+                    <Button 
+                      onClick={generateDailyContent} 
+                      disabled={loadingDaily || !planId}
+                      className="flex-1"
+                    >
+                      {loadingDaily ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generate Day {dayNumber} Content
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   {dailyContent.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Generated Days:</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {dailyContent.map((day) => (
-                          <Button
-                            key={day.id}
-                            variant={selectedDay === day.day_number ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSelectedDay(day.day_number)}
-                          >
-                            Day {day.day_number}
-                          </Button>
-                        ))}
-                      </div>
-
-                      {selectedDay && dailyContent.find(d => d.day_number === selectedDay) && (
-                        <div className="mt-4 p-4 bg-secondary/30 rounded-lg">
-                          <h5 className="font-semibold mb-2">Day {selectedDay} Content:</h5>
+                    <div className="space-y-4 mt-6">
+                      {dailyContent.map((content) => (
+                        <div key={content.id} className="p-4 bg-secondary/30 rounded-lg">
+                          <h5 className="font-semibold mb-2 text-primary">Day {content.day_number}</h5>
                           <div className="prose prose-sm max-w-none dark:prose-invert">
-                            <ReactMarkdown>
-                              {dailyContent.find(d => d.day_number === selectedDay)?.content || ''}
-                            </ReactMarkdown>
+                            <ReactMarkdown>{content.content}</ReactMarkdown>
                           </div>
                         </div>
-                      )}
+                      ))}
                     </div>
                   )}
                 </div>
