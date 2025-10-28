@@ -64,6 +64,7 @@ export type Database = {
       }
       study_goals: {
         Row: {
+          category: string | null
           completed: boolean | null
           created_at: string | null
           description: string | null
@@ -75,6 +76,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
