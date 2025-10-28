@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_study_content: {
+        Row: {
+          content: string
+          created_at: string
+          day_number: number
+          id: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          day_number: number
+          id?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          day_number?: number
+          id?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_study_content_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "study_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
