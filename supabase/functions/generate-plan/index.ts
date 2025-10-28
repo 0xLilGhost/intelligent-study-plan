@@ -57,14 +57,23 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Create a detailed study plan for this goal:
+            content: `Create a comprehensive study guide for this goal:
 Title: ${goal.title}
 Description: ${goal.description || 'Not provided'}
 Target Date: ${goal.target_date || 'Not set'}
 Priority: ${goal.priority}
 Available Materials: ${fileContext}
 
-Provide a structured plan with weekly milestones and daily tasks.`
+Provide:
+1. A structured learning plan with weekly milestones
+2. Detailed study content for each topic including:
+   - Clear definitions of key concepts
+   - In-depth explanations and examples
+   - Important formulas, theories, or frameworks
+   - Practice questions or exercises
+   - Real-world applications
+
+Make this a complete learning resource so the user can study directly from this content without needing additional materials.`
           }
         ],
       }),
