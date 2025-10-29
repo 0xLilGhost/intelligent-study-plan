@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { FileUpload } from '@/components/dashboard/FileUpload';
 import { ArrowLeft, Target, MapPin, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
 import mountainTrail from '@/assets/mountain-trail.jpg';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DailyContent {
   id: string;
@@ -20,6 +22,7 @@ interface DailyContent {
 export default function TrailPath() {
   const { goalId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [goal, setGoal] = useState<any>(null);
   const [plan, setPlan] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -236,6 +239,11 @@ export default function TrailPath() {
                 {restDays} rest days
               </Badge>
             </div>
+          )}
+
+          {/* File Upload Section */}
+          {user && (
+            <FileUpload userId={user.id} onUploadSuccess={loadGoalAndPlan} />
           )}
 
           {/* Generate Plan if not exists */}

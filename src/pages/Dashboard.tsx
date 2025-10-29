@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { TodayDashboard } from '@/components/dashboard/TodayDashboard';
 import { GoalForm } from '@/components/dashboard/GoalForm';
+import { FileUpload } from '@/components/dashboard/FileUpload';
 import { LogOut, Mountain } from 'lucide-react';
 import mountainTrail from '@/assets/mountain-trail.jpg';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -97,7 +98,9 @@ const Dashboard = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container max-w-2xl mx-auto px-4 py-8">
+        <main className="container max-w-2xl mx-auto px-4 py-8 space-y-6">
+          <FileUpload userId={user.id} onUploadSuccess={handleRefresh} />
+          
           <TodayDashboard 
             key={refreshKey}
             userId={user.id} 
