@@ -4,19 +4,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
-import { TodayDashboard } from '@/components/dashboard/TodayDashboard';
-import { GoalForm } from '@/components/dashboard/GoalForm';
 import { FileUpload } from '@/components/dashboard/FileUpload';
+import { GoalForm } from '@/components/dashboard/GoalForm';
+import { StudyPlan } from '@/components/dashboard/StudyPlan';
 import { LogOut, Mountain } from 'lucide-react';
 import mountainTrail from '@/assets/mountain-trail.jpg';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showGoalForm, setShowGoalForm] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,7 +50,6 @@ const Dashboard = () => {
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     loadProfile();
-    setShowGoalForm(false);
   };
 
   if (loading) {
@@ -98,22 +95,24 @@ const Dashboard = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container max-w-2xl mx-auto px-4 py-8 space-y-6">
-          <FileUpload userId={user.id} onUploadSuccess={handleRefresh} />
-          
-          <TodayDashboard 
-            key={refreshKey}
-            userId={user.id} 
-            onAddNewTrail={() => setShowGoalForm(true)}
-          />
-        </main>
+        <main className="container mx-auto px-4 py-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* File Upload */}
+            <div key={`upload-${refreshKey}`}>
+              <FileUpload userId={user.id} onUploadSuccess={handleRefresh} />
+            </div>
 
-        {/* Goal Form Dialog */}
-        <Dialog open={showGoalForm} onOpenChange={setShowGoalForm}>
-          <DialogContent className="max-w-lg">
-            <GoalForm userId={user.id} onGoalCreated={handleRefresh} />
-          </DialogContent>
-        </Dialog>
+            {/* Goal Form */}
+            <div key={`goal-${refreshKey}`}>
+              <GoalForm userId={user.id} onGoalCreated={handleRefresh} />
+            </div>
+
+            {/* Study Plan */}
+            <div className="md:col-span-2 lg:col-span-1" key={`plan-${refreshKey}`}>
+              <StudyPlan userId={user.id} />
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

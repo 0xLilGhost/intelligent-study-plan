@@ -62,68 +62,64 @@ export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-primary" />
-          Create New Trail
+          Set Study Goal
         </CardTitle>
-        <CardDescription>Set your learning destination</CardDescription>
+        <CardDescription>Define what you want to achieve</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              What's your hiking goal?
-            </Label>
+            <Label htmlFor="title">Goal Title</Label>
             <Input
               id="title"
-              placeholder="e.g., math questions"
+              placeholder="e.g., Master React Hooks"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="text-base"
             />
           </div>
-
           <div className="space-y-2">
-            <Label htmlFor="description">Total quantity to complete</Label>
-            <Input
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea
               id="description"
-              type="number"
-              placeholder="e.g., 300"
+              placeholder="Describe your goal in detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="text-base"
+              rows={3}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category">When do you want to complete this?</Label>
-            <Input
-              id="category"
-              type="date"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="text-base"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger id="priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                placeholder="e.g., Web Development"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              />
+            </div>
           </div>
-
-          <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
-            <h4 className="font-semibold text-sm">How it works:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Your goal will be broken into daily checkpoints</li>
-              <li>• Complete checkpoints to build your streak</li>
-              <li>• Earn tokens for each completed day</li>
-              <li>• Use focus timers to stay on track</li>
-            </ul>
-          </div>
-
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Trail...
+                Creating...
               </>
             ) : (
-              'Generate My Trail Path'
+              'Create Goal'
             )}
           </Button>
         </form>
