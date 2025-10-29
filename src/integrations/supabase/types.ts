@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       daily_study_content: {
         Row: {
+          completed: boolean | null
           content: string
           created_at: string
           day_number: number
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          completed?: boolean | null
           content: string
           created_at?: string
           day_number: number
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          completed?: boolean | null
           content?: string
           created_at?: string
           day_number?: number
