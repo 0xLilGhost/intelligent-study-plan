@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { mockGoalsApi } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,15 +27,8 @@ export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('study_goals').insert({
-        user_id: userId,
-        title,
-        description,
-        priority,
-        category,
-      });
-
-      if (error) throw error;
+      // TODO: Replace with actual API call
+      await mockGoalsApi.createGoal(userId, title, priority);
 
       toast({
         title: 'Goal created!',
@@ -49,7 +42,7 @@ export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
     } catch (error: any) {
       toast({
         title: 'Failed to create goal',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     } finally {

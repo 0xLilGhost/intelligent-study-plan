@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { mockGoalsApi, mockPlansApi, mockDailyContentApi, Goal, DailyContent } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Loader2, Sparkles, Calendar, CheckCircle2, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
@@ -10,20 +10,6 @@ import { Input } from '@/components/ui/input';
 
 interface StudyPlanProps {
   userId: string;
-}
-
-interface Goal {
-  id: string;
-  title: string;
-  priority: string;
-}
-
-interface DailyContent {
-  id: string;
-  day_number: number;
-  content: string;
-  created_at: string;
-  completed: boolean;
 }
 
 export function StudyPlan({ userId }: StudyPlanProps) {
@@ -48,13 +34,8 @@ export function StudyPlan({ userId }: StudyPlanProps) {
   }, [selectedGoalId]);
 
   const loadGoals = async () => {
-    const { data } = await supabase
-      .from('study_goals')
-      .select('id, title, priority')
-      .eq('user_id', userId)
-      .eq('completed', false)
-      .order('created_at', { ascending: false });
-
+    // TODO: Replace with actual API call
+    const data = await mockGoalsApi.getGoals(userId);
     if (data) {
       setGoals(data);
       if (data.length > 0) setSelectedGoalId(data[0].id);
@@ -62,14 +43,8 @@ export function StudyPlan({ userId }: StudyPlanProps) {
   };
 
   const loadExistingPlan = async (goalId: string) => {
-    // Load existing plan if available
-    const { data: existingPlan } = await supabase
-      .from('study_plans')
-      .select('id, plan_content')
-      .eq('goal_id', goalId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // TODO: Replace with actual API call
+    const existingPlan = await mockPlansApi.getPlan(goalId);
 
     if (existingPlan) {
       setPlan(existingPlan.plan_content);
@@ -87,27 +62,12 @@ export function StudyPlan({ userId }: StudyPlanProps) {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-plan', {
-        body: { goalId: selectedGoalId },
-      });
-
-      if (error) throw error;
+      // TODO: Replace with actual API call to your AI service
+      const data = await mockPlansApi.generatePlan(selectedGoalId);
       
-      setPlan(data.plan);
-      
-      // Get the plan ID to use for daily content generation
-      const { data: planData } = await supabase
-        .from('study_plans')
-        .select('id')
-        .eq('goal_id', selectedGoalId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (planData) {
-        setPlanId(planData.id);
-        loadDailyContent(planData.id);
-      }
+      setPlan(data.plan_content);
+      setPlanId(data.id);
+      loadDailyContent(data.id);
       
       toast({
         title: 'Study plan generated!',
@@ -116,7 +76,7 @@ export function StudyPlan({ userId }: StudyPlanProps) {
     } catch (error: any) {
       toast({
         title: 'Failed to generate plan',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -125,12 +85,8 @@ export function StudyPlan({ userId }: StudyPlanProps) {
   };
 
   const loadDailyContent = async (plan_id: string) => {
-    const { data } = await supabase
-      .from('daily_study_content')
-      .select('*')
-      .eq('plan_id', plan_id)
-      .order('day_number', { ascending: true });
-    
+    // TODO: Replace with actual API call
+    const data = await mockDailyContentApi.getDailyContent(plan_id);
     if (data) {
       setDailyContent(data);
     }
@@ -152,13 +108,10 @@ export function StudyPlan({ userId }: StudyPlanProps) {
 
     setLoadingDaily(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-daily-content', {
-        body: { planId, dayNumber },
-      });
-
-      if (error) throw error;
+      // TODO: Replace with actual API call to your AI service
+      const data = await mockDailyContentApi.generateDailyContent(planId, dayNumber);
       
-      setDailyContent(prev => [...prev, data.content].sort((a, b) => a.day_number - b.day_number));
+      setDailyContent(prev => [...prev, data].sort((a, b) => a.day_number - b.day_number));
       setDayNumber(dayNumber + 1);
       toast({
         title: `Day ${dayNumber} content generated!`,
@@ -167,7 +120,7 @@ export function StudyPlan({ userId }: StudyPlanProps) {
     } catch (error: any) {
       toast({
         title: 'Failed to generate daily content',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -176,23 +129,20 @@ export function StudyPlan({ userId }: StudyPlanProps) {
   };
 
   const toggleDayCompletion = async (contentId: string, completed: boolean) => {
-    const { error } = await supabase
-      .from('daily_study_content')
-      .update({ completed })
-      .eq('id', contentId);
+    try {
+      // TODO: Replace with actual API call
+      await mockDailyContentApi.updateDailyContent(contentId, { completed });
 
-    if (error) {
+      setDailyContent(prev =>
+        prev.map(c => c.id === contentId ? { ...c, completed } : c)
+      );
+    } catch (error: any) {
       toast({
         title: 'Failed to update progress',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
-      return;
     }
-
-    setDailyContent(prev =>
-      prev.map(c => c.id === contentId ? { ...c, completed } : c)
-    );
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { mockProfileApi, Profile } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { FileUpload } from '@/components/dashboard/FileUpload';
@@ -13,7 +13,7 @@ import mountainTrail from '@/assets/mountain-trail.jpg';
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -31,12 +31,8 @@ const Dashboard = () => {
   const loadProfile = async () => {
     if (!user) return;
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
+    // TODO: Replace with actual API call
+    const data = await mockProfileApi.getProfile(user.id);
     if (data) {
       setProfile(data);
     }

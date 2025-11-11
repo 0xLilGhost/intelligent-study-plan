@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { mockAuth } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,34 +24,13 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        // TODO: Replace with actual login API call
+        await mockAuth.signIn(email, password);
         toast({ title: 'Welcome back!', description: 'Successfully signed in.' });
         navigate('/');
       } else {
-        const { error: signUpError, data } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-        if (signUpError) throw signUpError;
-
-        // Create profile
-        if (data.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              display_name: displayName || null,
-            });
-          if (profileError) throw profileError;
-        }
-
+        // TODO: Replace with actual signup API call
+        await mockAuth.signUp(email, password, displayName);
         toast({
           title: 'Account created!',
           description: 'Welcome to StudyPilot. Your learning journey begins now.',
@@ -61,7 +40,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: 'Authentication error',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     } finally {

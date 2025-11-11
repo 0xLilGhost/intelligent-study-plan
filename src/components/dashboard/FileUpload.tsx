@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { mockFilesApi } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileText, Loader2 } from 'lucide-react';
@@ -20,23 +20,8 @@ export function FileUpload({ userId, onUploadSuccess }: FileUploadProps) {
 
     setUploading(true);
     try {
-      // Upload to storage
-      const filePath = `${userId}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('study-materials')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Save file metadata
-      const { error: dbError } = await supabase.from('study_files').insert({
-        user_id: userId,
-        file_name: file.name,
-        file_path: filePath,
-        file_type: file.type,
-      });
-
-      if (dbError) throw dbError;
+      // TODO: Replace with actual file upload API call
+      await mockFilesApi.uploadFile(userId, file);
 
       toast({
         title: 'File uploaded!',
@@ -46,7 +31,7 @@ export function FileUpload({ userId, onUploadSuccess }: FileUploadProps) {
     } catch (error: any) {
       toast({
         title: 'Upload failed',
-        description: error.message,
+        description: error.message || 'An error occurred',
         variant: 'destructive',
       });
     } finally {
