@@ -1,10 +1,53 @@
-// Mock API service - Replace with your actual backend API calls
+// API service for Spring Boot backend
+// Update API_BASE_URL to match your Spring Boot server address
+const API_BASE_URL = 'http://localhost:8080/api'; // Change this to your backend URL
 
 export interface User {
   id: string;
   email: string;
   displayName?: string;
 }
+
+// Auth token management
+const TOKEN_KEY = 'auth_token';
+
+const getAuthToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+const setAuthToken = (token: string): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+};
+
+const removeAuthToken = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+};
+
+// Helper function for API calls with auth
+const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  // Handle unauthorized
+  if (response.status === 401) {
+    removeAuthToken();
+    window.location.href = '/auth';
+  }
+
+  return response;
+};
 
 export interface Profile {
   id: string;
@@ -47,98 +90,97 @@ export interface DailyContent {
   created_at: string;
 }
 
-// Mock data storage
-let mockUser: User | null = null;
-let mockProfiles: Profile[] = [];
-let mockGoals: Goal[] = [];
-let mockFiles: StudyFile[] = [];
-let mockPlans: StudyPlan[] = [];
-let mockDailyContent: DailyContent[] = [];
+// User cache for session management
+let currentUser: User | null = null;
 
-// Initialize with localStorage
-const loadFromStorage = () => {
+const loadUserFromStorage = () => {
   try {
-    mockUser = JSON.parse(localStorage.getItem('mockUser') || 'null');
-    mockProfiles = JSON.parse(localStorage.getItem('mockProfiles') || '[]');
-    mockGoals = JSON.parse(localStorage.getItem('mockGoals') || '[]');
-    mockFiles = JSON.parse(localStorage.getItem('mockFiles') || '[]');
-    mockPlans = JSON.parse(localStorage.getItem('mockPlans') || '[]');
-    mockDailyContent = JSON.parse(localStorage.getItem('mockDailyContent') || '[]');
+    const token = getAuthToken();
+    const userData = localStorage.getItem('user_data');
+    if (token && userData) {
+      currentUser = JSON.parse(userData);
+    }
   } catch (e) {
-    console.error('Error loading from storage:', e);
+    console.error('Error loading user from storage:', e);
   }
 };
 
-const saveToStorage = () => {
-  localStorage.setItem('mockUser', JSON.stringify(mockUser));
-  localStorage.setItem('mockProfiles', JSON.stringify(mockProfiles));
-  localStorage.setItem('mockGoals', JSON.stringify(mockGoals));
-  localStorage.setItem('mockFiles', JSON.stringify(mockFiles));
-  localStorage.setItem('mockPlans', JSON.stringify(mockPlans));
-  localStorage.setItem('mockDailyContent', JSON.stringify(mockDailyContent));
-};
-
-loadFromStorage();
+loadUserFromStorage();
 
 // Auth API
 export const mockAuth = {
   signIn: async (email: string, password: string): Promise<User> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch('/api/auth/signin', { method: 'POST', body: JSON.stringify({ email, password }) });
-    await new Promise(resolve => setTimeout(resolve, 500));
-    mockUser = { id: 'user-' + Date.now(), email };
-    saveToStorage();
-    return mockUser;
+    const response = await apiCall('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Login failed');
+    }
+
+    const data = await response.json();
+    // Adjust based on your Spring Boot response structure
+    // Expecting: { token: string, user: { id, email, displayName } }
+    setAuthToken(data.token);
+    currentUser = data.user;
+    localStorage.setItem('user_data', JSON.stringify(currentUser));
+    return currentUser;
   },
 
   signUp: async (email: string, password: string, displayName?: string): Promise<User> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch('/api/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, displayName }) });
-    await new Promise(resolve => setTimeout(resolve, 500));
-    mockUser = { id: 'user-' + Date.now(), email, displayName };
-    
-    // Create initial profile
-    mockProfiles.push({
-      id: mockUser.id,
-      tokens: 100,
-      streak: 0,
-      display_name: displayName,
+    const response = await apiCall('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, displayName }),
     });
-    
-    saveToStorage();
-    return mockUser;
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Registration failed');
+    }
+
+    const data = await response.json();
+    // Adjust based on your Spring Boot response structure
+    setAuthToken(data.token);
+    currentUser = data.user;
+    localStorage.setItem('user_data', JSON.stringify(currentUser));
+    return currentUser;
   },
 
   signOut: async (): Promise<void> => {
-    // TODO: Replace with actual API call
-    // Example: await fetch('/api/auth/signout', { method: 'POST' });
-    await new Promise(resolve => setTimeout(resolve, 300));
-    mockUser = null;
-    saveToStorage();
+    // Optional: call logout endpoint if you have one
+    // await apiCall('/auth/logout', { method: 'POST' });
+    removeAuthToken();
+    localStorage.removeItem('user_data');
+    currentUser = null;
   },
 
   getCurrentUser: (): User | null => {
-    return mockUser;
+    return currentUser;
   },
 };
 
 // Profile API
 export const mockProfileApi = {
   getProfile: async (userId: string): Promise<Profile | null> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/profiles/${userId}`);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockProfiles.find(p => p.id === userId) || null;
+    const response = await apiCall(`/profile/${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+
+    return await response.json();
   },
 
   updateProfile: async (userId: string, updates: Partial<Profile>): Promise<void> => {
-    // TODO: Replace with actual API call
-    // Example: await fetch(`/api/profiles/${userId}`, { method: 'PATCH', body: JSON.stringify(updates) });
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = mockProfiles.findIndex(p => p.id === userId);
-    if (index !== -1) {
-      mockProfiles[index] = { ...mockProfiles[index], ...updates };
-      saveToStorage();
+    const response = await apiCall(`/profile/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update profile');
     }
   },
 };
@@ -146,37 +188,36 @@ export const mockProfileApi = {
 // Goals API
 export const mockGoalsApi = {
   getGoals: async (userId: string): Promise<Goal[]> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/goals?userId=${userId}`);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockGoals.filter(g => g.user_id === userId && !g.completed);
+    const response = await apiCall(`/goals?userId=${userId}&completed=false`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch goals');
+    }
+
+    return await response.json();
   },
 
   createGoal: async (userId: string, title: string, priority: string): Promise<Goal> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch('/api/goals', { method: 'POST', body: JSON.stringify({ userId, title, priority }) });
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const newGoal: Goal = {
-      id: 'goal-' + Date.now(),
-      user_id: userId,
-      title,
-      priority,
-      completed: false,
-      created_at: new Date().toISOString(),
-    };
-    mockGoals.push(newGoal);
-    saveToStorage();
-    return newGoal;
+    const response = await apiCall('/goals', {
+      method: 'POST',
+      body: JSON.stringify({ userId, title, priority }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create goal');
+    }
+
+    return await response.json();
   },
 
   updateGoal: async (goalId: string, updates: Partial<Goal>): Promise<void> => {
-    // TODO: Replace with actual API call
-    // Example: await fetch(`/api/goals/${goalId}`, { method: 'PATCH', body: JSON.stringify(updates) });
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = mockGoals.findIndex(g => g.id === goalId);
-    if (index !== -1) {
-      mockGoals[index] = { ...mockGoals[index], ...updates };
-      saveToStorage();
+    const response = await apiCall(`/goals/${goalId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update goal');
     }
   },
 };
@@ -184,137 +225,98 @@ export const mockGoalsApi = {
 // Files API
 export const mockFilesApi = {
   uploadFile: async (userId: string, file: File): Promise<StudyFile> => {
-    // TODO: Replace with actual API call for file upload
-    // Example: const formData = new FormData(); formData.append('file', file);
-    // const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newFile: StudyFile = {
-      id: 'file-' + Date.now(),
-      user_id: userId,
-      file_name: file.name,
-      file_path: `${userId}/${Date.now()}_${file.name}`,
-      file_type: file.type,
-      created_at: new Date().toISOString(),
-    };
-    mockFiles.push(newFile);
-    saveToStorage();
-    return newFile;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', userId);
+
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    return await response.json();
   },
 
   getFiles: async (userId: string): Promise<StudyFile[]> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/files?userId=${userId}`);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockFiles.filter(f => f.user_id === userId);
+    const response = await apiCall(`/files?userId=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch files');
+    }
+
+    return await response.json();
   },
 };
 
 // Study Plans API
 export const mockPlansApi = {
   generatePlan: async (goalId: string): Promise<StudyPlan> => {
-    // TODO: Replace with actual API call to your AI service
-    // Example: const response = await fetch('/api/plans/generate', { method: 'POST', body: JSON.stringify({ goalId }) });
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const goal = mockGoals.find(g => g.id === goalId);
-    const planContent = `# Study Plan for: ${goal?.title || 'Your Goal'}
+    const response = await apiCall('/ai/generate-plan', {
+      method: 'POST',
+      body: JSON.stringify({ goalId }),
+    });
 
-## Overview
-This is your personalized study plan generated by AI.
+    if (!response.ok) {
+      throw new Error('Failed to generate plan');
+    }
 
-## Week 1-2: Foundations
-- Day 1-3: Introduction and basics
-- Day 4-7: Core concepts
-- Day 8-14: Practice and review
-
-## Week 3-4: Intermediate
-- Day 15-21: Advanced topics
-- Day 22-28: Projects and applications
-
-## Week 5-6: Mastery
-- Day 29-35: Expert techniques
-- Day 36-42: Final project and assessment
-
-*This is a placeholder. Replace with actual AI-generated content from your backend.*`;
-
-    const newPlan: StudyPlan = {
-      id: 'plan-' + Date.now(),
-      goal_id: goalId,
-      plan_content: planContent,
-      created_at: new Date().toISOString(),
-    };
-    mockPlans.push(newPlan);
-    saveToStorage();
-    return newPlan;
+    return await response.json();
   },
 
   getPlan: async (goalId: string): Promise<StudyPlan | null> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/plans?goalId=${goalId}`);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockPlans.find(p => p.goal_id === goalId) || null;
+    const response = await apiCall(`/plans?goalId=${goalId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error('Failed to fetch plan');
+    }
+
+    const plans = await response.json();
+    return plans.length > 0 ? plans[0] : null;
   },
 };
 
 // Daily Content API
 export const mockDailyContentApi = {
   generateDailyContent: async (planId: string, dayNumber: number): Promise<DailyContent> => {
-    // TODO: Replace with actual API call to your AI service
-    // Example: const response = await fetch('/api/daily-content/generate', { method: 'POST', body: JSON.stringify({ planId, dayNumber }) });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const content = `# Day ${dayNumber} Study Guide
+    const response = await apiCall('/ai/generate-daily-content', {
+      method: 'POST',
+      body: JSON.stringify({ planId, dayNumber }),
+    });
 
-## Morning Session (2 hours)
-- Review previous day's material
-- Introduction to today's topic
-- Key concepts overview
+    if (!response.ok) {
+      throw new Error('Failed to generate daily content');
+    }
 
-## Afternoon Session (2 hours)
-- Deep dive into main topics
-- Practical exercises
-- Hands-on practice
-
-## Evening Session (1 hour)
-- Review and consolidation
-- Practice problems
-- Prepare for next day
-
-## Resources
-- Reading materials
-- Video tutorials
-- Practice exercises
-
-*This is a placeholder. Replace with actual AI-generated content from your backend.*`;
-
-    const newContent: DailyContent = {
-      id: 'content-' + Date.now(),
-      plan_id: planId,
-      day_number: dayNumber,
-      content,
-      completed: false,
-      created_at: new Date().toISOString(),
-    };
-    mockDailyContent.push(newContent);
-    saveToStorage();
-    return newContent;
+    return await response.json();
   },
 
   getDailyContent: async (planId: string): Promise<DailyContent[]> => {
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/daily-content?planId=${planId}`);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockDailyContent.filter(c => c.plan_id === planId);
+    const response = await apiCall(`/daily-content?planId=${planId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch daily content');
+    }
+
+    return await response.json();
   },
 
   updateDailyContent: async (contentId: string, updates: Partial<DailyContent>): Promise<void> => {
-    // TODO: Replace with actual API call
-    // Example: await fetch(`/api/daily-content/${contentId}`, { method: 'PATCH', body: JSON.stringify(updates) });
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = mockDailyContent.findIndex(c => c.id === contentId);
-    if (index !== -1) {
-      mockDailyContent[index] = { ...mockDailyContent[index], ...updates };
-      saveToStorage();
+    const response = await apiCall(`/daily-content/${contentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update daily content');
     }
   },
 };
