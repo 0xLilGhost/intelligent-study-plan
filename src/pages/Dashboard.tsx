@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { mockProfileApi, Profile } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
-import { CreateGoalCard } from '@/components/dashboard/CreateGoalCard';
+import { SetupWizard } from '@/components/dashboard/SetupWizard';
 import { GoalsList } from '@/components/dashboard/GoalsList';
 import { StudyPlan } from '@/components/dashboard/StudyPlan';
 import { LogOut, Mountain } from 'lucide-react';
@@ -92,9 +92,9 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8 space-y-6">
-          {/* Create Goal Section */}
-          <div className="max-w-2xl mx-auto">
-            <CreateGoalCard userId={user.id} onGoalCreated={handleRefresh} />
+          {/* Create Goal Wizard */}
+          <div className="max-w-3xl mx-auto">
+            <SetupWizard userId={user.id} onComplete={handleRefresh} />
           </div>
 
           {/* Goals and Plans Section */}
