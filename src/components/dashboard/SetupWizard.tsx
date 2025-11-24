@@ -42,14 +42,14 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
       setUploadedFileId(uploaded.id);
       setUploadedFileName(uploaded.file_name);
       toast({
-        title: 'File uploaded!',
-        description: 'Now let\'s create your learning goal.',
+        title: '文件上传成功！',
+        description: '现在让我们创建您的学习目标。',
       });
       setStep('goal');
     } catch (error: any) {
       toast({
-        title: 'Upload failed',
-        description: error.message || 'An error occurred',
+        title: '上传失败',
+        description: error.message || '发生错误',
         variant: 'destructive',
       });
     } finally {
@@ -70,17 +70,17 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
       }
       
       toast({
-        title: 'Goal created!',
+        title: '目标创建成功！',
         description: uploadedFileId 
-          ? 'Your goal and file have been linked successfully.'
-          : 'Your goal has been created successfully.',
+          ? '您的目标和文件已成功关联。'
+          : '您的学习目标已成功创建。',
       });
 
       onComplete();
     } catch (error: any) {
       toast({
-        title: 'Failed to create goal',
-        description: error.message || 'An error occurred',
+        title: '创建目标失败',
+        description: error.message || '发生错误',
         variant: 'destructive',
       });
     } finally {
@@ -120,14 +120,14 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
   );
 
   return (
-    <Card className="md:col-span-2">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          Create Your Learning Plan
+    <Card className="border-2 shadow-lg">
+      <CardHeader className="text-center">
+        <CardTitle className="flex items-center justify-center gap-2 text-2xl">
+          <Sparkles className="h-6 w-6 text-primary" />
+          创建学习计划
         </CardTitle>
         <CardDescription>
-          Upload materials, set your goal, and get a personalized study plan
+          上传学习资料并设置目标，获得个性化学习计划
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -136,10 +136,14 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
         {step === 'upload' && (
           <div className="space-y-4">
             <div className="text-center">
-              <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Upload Study Materials (Optional)</h3>
+              <div className="mb-4 flex justify-center">
+                <div className="p-4 bg-primary/10 rounded-full">
+                  <Upload className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">上传学习资料（可选）</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Add documents, notes, or any learning resources
+                添加文档、笔记或其他学习资源
               </p>
             </div>
             <label className="block">
@@ -159,12 +163,12 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
                 {uploading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    上传中...
                   </>
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    Choose File
+                    选择文件
                   </>
                 )}
               </Button>
@@ -182,7 +186,7 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
               className="w-full"
               onClick={() => setStep('goal')}
             >
-              Skip <ChevronRight className="ml-1 h-4 w-4" />
+              跳过 <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         )}
@@ -190,18 +194,22 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
         {step === 'goal' && (
           <form onSubmit={handleGoalSubmit} className="space-y-4">
             <div className="text-center mb-4">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Set Your Learning Goal</h3>
+              <div className="mb-4 flex justify-center">
+                <div className="p-4 bg-primary/10 rounded-full">
+                  <Target className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">设置学习目标</h3>
               <p className="text-sm text-muted-foreground">
-                {uploadedFileName ? `Define what you want to achieve with ${uploadedFileName}` : 'Define your learning goal'}
+                {uploadedFileName ? `定义您使用 ${uploadedFileName} 想要达成的目标` : '定义您的学习目标'}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Goal Title</Label>
+              <Label htmlFor="title">目标标题</Label>
               <Input
                 id="title"
-                placeholder="e.g., Master React Hooks"
+                placeholder="例如：掌握 React Hooks"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -209,10 +217,10 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">描述（可选）</Label>
               <Textarea
                 id="description"
-                placeholder="Describe your goal in detail..."
+                placeholder="详细描述您的目标..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -221,23 +229,23 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">优先级</Label>
                 <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger id="priority">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="low">低</SelectItem>
+                    <SelectItem value="medium">中</SelectItem>
+                    <SelectItem value="high">高</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">分类</Label>
                 <Input
                   id="category"
-                  placeholder="e.g., Web Development"
+                  placeholder="例如：前端开发"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 />
@@ -251,17 +259,17 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
                 onClick={() => setStep('upload')}
                 className="flex-1"
               >
-                <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                <ChevronLeft className="mr-1 h-4 w-4" /> 返回
               </Button>
               <Button type="submit" className="flex-1" disabled={creating}>
                 {creating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    创建中...
                   </>
                 ) : (
                   <>
-                    Create Goal <ChevronRight className="ml-1 h-4 w-4" />
+                    创建目标 <ChevronRight className="ml-1 h-4 w-4" />
                   </>
                 )}
               </Button>
