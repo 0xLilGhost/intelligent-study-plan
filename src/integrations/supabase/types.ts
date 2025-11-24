@@ -78,6 +78,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_type: string | null
+          goal_id: string | null
           id: string
           uploaded_at: string | null
           user_id: string
@@ -86,6 +87,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_type?: string | null
+          goal_id?: string | null
           id?: string
           uploaded_at?: string | null
           user_id: string
@@ -94,11 +96,20 @@ export type Database = {
           file_name?: string
           file_path?: string
           file_type?: string | null
+          goal_id?: string | null
           id?: string
           uploaded_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "study_files_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "study_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       study_goals: {
         Row: {
