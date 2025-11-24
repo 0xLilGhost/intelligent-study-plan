@@ -8,10 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 interface GoalsListProps {
   userId: string;
   onPlanGenerated?: () => void;
-  onGoalsLoaded?: (count: number) => void;
 }
 
-export function GoalsList({ userId, onPlanGenerated, onGoalsLoaded }: GoalsListProps) {
+export function GoalsList({ userId, onPlanGenerated }: GoalsListProps) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
   const [generatingForGoal, setGeneratingForGoal] = useState<string | null>(null);
@@ -26,7 +25,6 @@ export function GoalsList({ userId, onPlanGenerated, onGoalsLoaded }: GoalsListP
     try {
       const fetchedGoals = await mockGoalsApi.getGoals(userId);
       setGoals(fetchedGoals);
-      onGoalsLoaded?.(fetchedGoals.length);
     } catch (error: any) {
       toast({
         title: 'Failed to load goals',
