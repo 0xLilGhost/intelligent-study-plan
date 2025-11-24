@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { mockFilesApi, mockGoalsApi, mockPlansApi } from '@/services/mockApi';
+import { useState, useEffect } from 'react';
+import { mockFilesApi, mockGoalsApi, mockPlansApi, Goal } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ interface SetupWizardProps {
   onComplete: () => void;
 }
 
-type Step = 'upload' | 'goal' | 'generating';
+type Step = 'upload' | 'goal' | 'select' | 'generating';
 
 export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
   const [step, setStep] = useState<Step>('upload');
@@ -28,7 +28,35 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
   const [category, setCategory] = useState('');
   const [creating, setCreating] = useState(false);
   
+  // Goal selection state
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (step === 'select') {
+      loadGoals();
+    }
+  }, [step]);
+
+  const loadGoals = async () => {
+    setLoading(true);
+    try {
+      const fetchedGoals = await mockGoalsApi.getGoals(userId);
+      setGoals(fetchedGoals);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load goals',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,24 +87,14 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
     setCreating(true);
 
     try {
-      const goal = await mockGoalsApi.createGoal(userId, title, priority);
+      await mockGoalsApi.createGoal(userId, title, priority);
       
       toast({
         title: 'Goal created!',
-        description: 'Generating your personalized study plan...',
+        description: 'Now select a goal to generate a plan.',
       });
 
-      setStep('generating');
-      
-      // Generate the plan
-      await mockPlansApi.generatePlan(goal.id);
-      
-      toast({
-        title: 'Study plan ready!',
-        description: 'Your learning journey begins now.',
-      });
-
-      onComplete();
+      setStep('select');
     } catch (error: any) {
       toast({
         title: 'Failed to create goal',
@@ -88,10 +106,44 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
     }
   };
 
+  const handleGeneratePlan = async () => {
+    if (!selectedGoalId) {
+      toast({
+        title: 'No goal selected',
+        description: 'Please select a goal to generate a plan.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setGenerating(true);
+    setStep('generating');
+
+    try {
+      await mockPlansApi.generatePlan(selectedGoalId);
+      
+      toast({
+        title: 'Study plan ready!',
+        description: 'Your learning journey begins now.',
+      });
+
+      onComplete();
+    } catch (error: any) {
+      toast({
+        title: 'Failed to generate plan',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+      setStep('select');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center gap-2 mb-6">
       <div className={`flex items-center gap-2 ${step === 'upload' ? 'text-primary' : 'text-muted-foreground'}`}>
-        {uploadedFile ? (
+        {uploadedFile || step !== 'upload' ? (
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
             <Check className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -118,11 +170,22 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
       
       <div className="w-12 h-0.5 bg-border" />
       
+      <div className={`flex items-center gap-2 ${step === 'select' ? 'text-primary' : 'text-muted-foreground'}`}>
+        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+          step === 'select' ? 'border-primary' : 'border-muted'
+        }`}>
+          3
+        </div>
+        <span className="text-sm font-medium hidden sm:inline">Select</span>
+      </div>
+      
+      <div className="w-12 h-0.5 bg-border" />
+      
       <div className={`flex items-center gap-2 ${step === 'generating' ? 'text-primary' : 'text-muted-foreground'}`}>
         <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
           step === 'generating' ? 'border-primary' : 'border-muted'
         }`}>
-          3
+          4
         </div>
         <span className="text-sm font-medium hidden sm:inline">Generate</span>
       </div>
@@ -147,7 +210,7 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
           <div className="space-y-4">
             <div className="text-center">
               <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Upload Study Materials</h3>
+              <h3 className="text-lg font-semibold mb-2">Upload Study Materials (Optional)</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Add documents, notes, or any learning resources
               </p>
@@ -185,11 +248,15 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
                   <Check className="h-4 w-4 text-primary" />
                   <span className="text-sm">{uploadedFile.file_name}</span>
                 </div>
-                <Button size="sm" onClick={() => setStep('goal')}>
-                  Next <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
               </div>
             )}
+            <Button 
+              variant="ghost" 
+              className="w-full"
+              onClick={() => setStep('goal')}
+            >
+              Skip <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
           </div>
         )}
 
@@ -199,7 +266,7 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
               <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Set Your Learning Goal</h3>
               <p className="text-sm text-muted-foreground">
-                Define what you want to achieve with {uploadedFile?.file_name}
+                {uploadedFile ? `Define what you want to achieve with ${uploadedFile.file_name}` : 'Define your learning goal'}
               </p>
             </div>
 
@@ -267,12 +334,94 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
                   </>
                 ) : (
                   <>
-                    Generate Plan <ChevronRight className="ml-1 h-4 w-4" />
+                    Create Goal <ChevronRight className="ml-1 h-4 w-4" />
                   </>
                 )}
               </Button>
             </div>
           </form>
+        )}
+
+        {step === 'select' && (
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Select a Goal</h3>
+              <p className="text-sm text-muted-foreground">
+                Choose which goal you'd like to generate a study plan for
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 text-primary mx-auto mb-2 animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading goals...</p>
+              </div>
+            ) : goals.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No goals found. Please create a goal first.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {goals.map((goal) => (
+                  <div
+                    key={goal.id}
+                    onClick={() => setSelectedGoalId(goal.id)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedGoalId === goal.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{goal.title}</h4>
+                        <div className="flex gap-2 mt-2">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            goal.priority === 'high' ? 'bg-destructive/10 text-destructive' :
+                            goal.priority === 'medium' ? 'bg-primary/10 text-primary' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {goal.priority}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedGoalId === goal.id && (
+                        <Check className="h-5 w-5 text-primary flex-shrink-0 ml-2" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep('goal')}
+                className="flex-1"
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" /> Back
+              </Button>
+              <Button 
+                onClick={handleGeneratePlan}
+                className="flex-1"
+                disabled={!selectedGoalId || generating}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    Generate Plan <ChevronRight className="ml-1 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         )}
 
         {step === 'generating' && (
