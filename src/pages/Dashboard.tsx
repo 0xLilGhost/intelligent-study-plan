@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { mockProfileApi, Profile } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
-import { SetupWizard } from '@/components/dashboard/SetupWizard';
+import { GoalForm } from '@/components/dashboard/GoalForm';
+import { GoalsList } from '@/components/dashboard/GoalsList';
+import { FileUpload } from '@/components/dashboard/FileUpload';
 import { StudyPlan } from '@/components/dashboard/StudyPlan';
-import { LogOut, Mountain, Sparkles } from 'lucide-react';
+import { LogOut, Mountain } from 'lucide-react';
 import mountainTrail from '@/assets/mountain-trail.jpg';
 
 const Dashboard = () => {
@@ -14,7 +16,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showWizard, setShowWizard] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,11 +47,6 @@ const Dashboard = () => {
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     loadProfile();
-  };
-
-  const handleWizardComplete = () => {
-    setShowWizard(false);
-    handleRefresh();
   };
 
   if (loading) {
@@ -97,30 +93,29 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          {showWizard ? (
-            <div className="max-w-2xl mx-auto">
-              <SetupWizard userId={user.id} onComplete={handleWizardComplete} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* File Upload */}
+              <FileUpload userId={user.id} onUploadSuccess={handleRefresh} />
+              
+              {/* Goal Creation Form */}
+              <GoalForm userId={user.id} onGoalCreated={handleRefresh} />
             </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-2">
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Goals List */}
+              <div key={`goals-${refreshKey}`}>
+                <GoalsList userId={user.id} onPlanGenerated={handleRefresh} />
+              </div>
+              
               {/* Study Plan */}
               <div key={`plan-${refreshKey}`}>
                 <StudyPlan userId={user.id} />
               </div>
-
-              {/* Quick Actions */}
-              <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowWizard(true)}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Create New Learning Plan
-                </Button>
-              </div>
             </div>
-          )}
+          </div>
         </main>
       </div>
     </div>
