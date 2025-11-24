@@ -12,13 +12,15 @@ import { useToast } from '@/hooks/use-toast';
 interface GoalFormProps {
   userId: string;
   onGoalCreated: () => void;
+  recentFiles?: any[];
 }
 
-export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
+export function GoalForm({ userId, onGoalCreated, recentFiles = [] }: GoalFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
   const [category, setCategory] = useState('');
+  const [linkedFiles, setLinkedFiles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -38,6 +40,7 @@ export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
       setTitle('');
       setDescription('');
       setCategory('');
+      setLinkedFiles([]);
       onGoalCreated();
     } catch (error: any) {
       toast({
@@ -105,6 +108,30 @@ export function GoalForm({ userId, onGoalCreated }: GoalFormProps) {
               />
             </div>
           </div>
+          {recentFiles.length > 0 && (
+            <div className="space-y-2">
+              <Label>Link Files (Optional)</Label>
+              <div className="space-y-2">
+                {recentFiles.map((file) => (
+                  <label key={file.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={linkedFiles.includes(file.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setLinkedFiles([...linkedFiles, file.id]);
+                        } else {
+                          setLinkedFiles(linkedFiles.filter(id => id !== file.id));
+                        }
+                      }}
+                      className="rounded border-input"
+                    />
+                    <span className="text-sm">{file.file_name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <>
