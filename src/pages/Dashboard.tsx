@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { mockProfileApi, Profile } from '@/services/mockApi';
+import { mockProfileApi, mockFilesApi, Profile } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { FileUpload } from '@/components/dashboard/FileUpload';
@@ -15,6 +15,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [recentFiles, setRecentFiles] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,6 +47,19 @@ const Dashboard = () => {
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     loadProfile();
+  };
+
+  const handleFileUpload = async () => {
+    handleRefresh();
+    // Load recent files
+    if (user) {
+      try {
+        const files = await mockFilesApi.getFiles(user.id);
+        setRecentFiles(files.slice(0, 3)); // Keep last 3 files
+      } catch (error) {
+        console.error('Failed to load files:', error);
+      }
+    }
   };
 
   if (loading) {
@@ -95,12 +109,12 @@ const Dashboard = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* File Upload */}
             <div key={`upload-${refreshKey}`}>
-              <FileUpload userId={user.id} onUploadSuccess={handleRefresh} />
+              <FileUpload userId={user.id} onUploadSuccess={handleFileUpload} />
             </div>
 
             {/* Goal Form */}
             <div key={`goal-${refreshKey}`}>
-              <GoalForm userId={user.id} onGoalCreated={handleRefresh} />
+              <GoalForm userId={user.id} onGoalCreated={handleRefresh} recentFiles={recentFiles} />
             </div>
 
             {/* Study Plan */}
