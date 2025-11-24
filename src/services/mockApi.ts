@@ -254,6 +254,17 @@ export const mockFilesApi = {
 
     return await response.json();
   },
+
+  linkFileToGoal: async (fileId: string, goalId: string): Promise<void> => {
+    const response = await apiCall(`/files/${fileId}/link-goal`, {
+      method: 'PATCH',
+      body: JSON.stringify({ goalId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to link file to goal');
+    }
+  },
 };
 
 // Study Plans API
