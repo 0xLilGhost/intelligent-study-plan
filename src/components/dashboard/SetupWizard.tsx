@@ -6,15 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Target, Sparkles, Check, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Upload, Target, Sparkles, Check, Loader2, ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 interface SetupWizardProps {
   userId: string;
   onComplete: () => void;
 }
 
-type Step = 'upload' | 'goal' | 'select' | 'generating';
+type Step = 'upload' | 'goal' | 'select' | 'generating' | 'preview';
 
 export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
   const [step, setStep] = useState<Step>('upload');
@@ -33,6 +34,9 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
   const [selectedGoalId, setSelectedGoalId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  
+  // Plan preview state
+  const [generatedPlan, setGeneratedPlan] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -120,14 +124,15 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
     setStep('generating');
 
     try {
-      await mockPlansApi.generatePlan(selectedGoalId);
+      const data = await mockPlansApi.generatePlan(selectedGoalId);
+      setGeneratedPlan(data.plan_content);
       
       toast({
         title: 'Study plan ready!',
         description: 'Your learning journey begins now.',
       });
 
-      onComplete();
+      setStep('preview');
     } catch (error: any) {
       toast({
         title: 'Failed to generate plan',
@@ -181,12 +186,18 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
       
       <div className="w-12 h-0.5 bg-border" />
       
-      <div className={`flex items-center gap-2 ${step === 'generating' ? 'text-primary' : 'text-muted-foreground'}`}>
-        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-          step === 'generating' ? 'border-primary' : 'border-muted'
-        }`}>
-          4
-        </div>
+      <div className={`flex items-center gap-2 ${step === 'generating' || step === 'preview' ? 'text-primary' : 'text-muted-foreground'}`}>
+        {step === 'preview' ? (
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <Check className="w-4 h-4 text-primary-foreground" />
+          </div>
+        ) : (
+          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+            step === 'generating' ? 'border-primary' : 'border-muted'
+          }`}>
+            4
+          </div>
+        )}
         <span className="text-sm font-medium hidden sm:inline">Generate</span>
       </div>
     </div>
@@ -431,6 +442,27 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
             <p className="text-sm text-muted-foreground">
               Please wait while we generate your personalized learning journey...
             </p>
+          </div>
+        )}
+
+        {step === 'preview' && generatedPlan && (
+          <div className="space-y-4">
+            <div className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-lg flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Your Study Plan
+                </h4>
+              </div>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown>{generatedPlan}</ReactMarkdown>
+              </div>
+            </div>
+
+            <Button onClick={onComplete} className="w-full">
+              <Check className="mr-2 h-4 w-4" />
+              Complete Setup
+            </Button>
           </div>
         )}
       </CardContent>
