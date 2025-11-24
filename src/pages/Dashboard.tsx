@@ -15,6 +15,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [hasGoals, setHasGoals] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
@@ -51,7 +52,12 @@ const Dashboard = () => {
 
   const handleWizardComplete = () => {
     setShowWizard(false);
+    setHasGoals(true);
     handleRefresh();
+  };
+
+  const handleGoalsLoaded = (count: number) => {
+    setHasGoals(count > 0);
   };
 
   if (loading) {
@@ -98,16 +104,16 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          {showWizard ? (
+          {showWizard || !hasGoals ? (
             <div className="max-w-2xl mx-auto">
               <SetupWizard userId={user.id} onComplete={handleWizardComplete} />
             </div>
           ) : (
             <>
-              <div className="mb-6">
+              <div className="mb-6 flex justify-center">
                 <Button
                   onClick={() => setShowWizard(true)}
-                  className="w-full max-w-md mx-auto flex"
+                  size="lg"
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
                   Create New Learning Plan
@@ -117,7 +123,11 @@ const Dashboard = () => {
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Goals List */}
                 <div key={`goals-${refreshKey}`}>
-                  <GoalsList userId={user.id} onPlanGenerated={handleRefresh} />
+                  <GoalsList 
+                    userId={user.id} 
+                    onPlanGenerated={handleRefresh}
+                    onGoalsLoaded={handleGoalsLoaded}
+                  />
                 </div>
                 
                 {/* Study Plan */}
