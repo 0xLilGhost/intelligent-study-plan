@@ -104,7 +104,7 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          {showWizard || !hasGoals ? (
+          {showWizard ? (
             <div className="max-w-2xl mx-auto">
               <SetupWizard userId={user.id} onComplete={handleWizardComplete} />
             </div>
