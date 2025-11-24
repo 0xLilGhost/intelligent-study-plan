@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { mockProfileApi, mockFilesApi, Profile } from '@/services/mockApi';
+import { mockProfileApi, Profile } from '@/services/mockApi';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
-import { FileUpload } from '@/components/dashboard/FileUpload';
-import { GoalForm } from '@/components/dashboard/GoalForm';
+import { SetupWizard } from '@/components/dashboard/SetupWizard';
 import { StudyPlan } from '@/components/dashboard/StudyPlan';
-import { LogOut, Mountain } from 'lucide-react';
+import { LogOut, Mountain, Sparkles } from 'lucide-react';
 import mountainTrail from '@/assets/mountain-trail.jpg';
 
 const Dashboard = () => {
@@ -15,7 +14,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [showWizard, setShowWizard] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,17 +48,9 @@ const Dashboard = () => {
     loadProfile();
   };
 
-  const handleFileUpload = async () => {
+  const handleWizardComplete = () => {
+    setShowWizard(false);
     handleRefresh();
-    // Load recent files
-    if (user) {
-      try {
-        const files = await mockFilesApi.getFiles(user.id);
-        setRecentFiles(files.slice(0, 3)); // Keep last 3 files
-      } catch (error) {
-        console.error('Failed to load files:', error);
-      }
-    }
   };
 
   if (loading) {
@@ -106,22 +97,30 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* File Upload */}
-            <div key={`upload-${refreshKey}`}>
-              <FileUpload userId={user.id} onUploadSuccess={handleFileUpload} />
+          {showWizard ? (
+            <div className="max-w-2xl mx-auto">
+              <SetupWizard userId={user.id} onComplete={handleWizardComplete} />
             </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Study Plan */}
+              <div key={`plan-${refreshKey}`}>
+                <StudyPlan userId={user.id} />
+              </div>
 
-            {/* Goal Form */}
-            <div key={`goal-${refreshKey}`}>
-              <GoalForm userId={user.id} onGoalCreated={handleRefresh} recentFiles={recentFiles} />
+              {/* Quick Actions */}
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowWizard(true)}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Create New Learning Plan
+                </Button>
+              </div>
             </div>
-
-            {/* Study Plan */}
-            <div className="md:col-span-2 lg:col-span-1" key={`plan-${refreshKey}`}>
-              <StudyPlan userId={user.id} />
-            </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
