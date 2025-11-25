@@ -60,11 +60,13 @@ export function CreateGoalCard({ userId, onGoalCreated }: CreateGoalCardProps) {
 
     setCreating(true);
     try {
-      const goal = await mockGoalsApi.createGoal(userId, title.trim(), priority);
-
-      if (uploadedFile) {
-        await mockFilesApi.linkFileToGoal(uploadedFile.id, goal.id);
-      }
+      // Pass fileId directly to createGoal (empty string if no file)
+      const goal = await mockGoalsApi.createGoal(
+        userId, 
+        title.trim(), 
+        priority, 
+        uploadedFile?.id || ''
+      );
 
       toast({
         title: 'Goal created!',
