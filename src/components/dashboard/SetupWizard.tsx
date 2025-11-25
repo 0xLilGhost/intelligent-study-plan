@@ -62,12 +62,13 @@ export function SetupWizard({ userId, onComplete }: SetupWizardProps) {
     setCreating(true);
 
     try {
-      const newGoal = await mockGoalsApi.createGoal(userId, title, priority);
-      
-      // If a file was uploaded, link it to the goal
-      if (uploadedFileId) {
-        await mockFilesApi.linkFileToGoal(uploadedFileId, newGoal.id);
-      }
+      // Pass fileId directly to createGoal (empty string if no file)
+      const newGoal = await mockGoalsApi.createGoal(
+        userId, 
+        title, 
+        priority, 
+        uploadedFileId || ''
+      );
       
       toast({
         title: '目标创建成功！',

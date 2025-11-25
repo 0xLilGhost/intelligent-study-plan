@@ -1,6 +1,6 @@
 // API service for Spring Boot backend
 // Update API_BASE_URL to match your Spring Boot server address
-const API_BASE_URL = 'http://localhost:8080/api'; // Change this to your backend URL
+const API_BASE_URL = 'http://localhost:8081/v1/api'; // Change this to your backend URL
 
 export interface User {
   id: string;
@@ -110,7 +110,7 @@ loadUserFromStorage();
 // Auth API
 export const mockAuth = {
   signIn: async (email: string, password: string): Promise<User> => {
-    const response = await apiCall('/auth/login', {
+    const response = await apiCall('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -130,7 +130,7 @@ export const mockAuth = {
   },
 
   signUp: async (email: string, password: string, displayName?: string): Promise<User> => {
-    const response = await apiCall('/auth/register', {
+    const response = await apiCall('/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, displayName }),
     });
@@ -197,10 +197,10 @@ export const mockGoalsApi = {
     return await response.json();
   },
 
-  createGoal: async (userId: string, title: string, priority: string): Promise<Goal> => {
+  createGoal: async (userId: string, title: string, priority: string, fileId: string): Promise<Goal> => {
     const response = await apiCall('/goals', {
       method: 'POST',
-      body: JSON.stringify({ userId, title, priority }),
+      body: JSON.stringify({ userId, title, priority, fileId }),
     });
 
     if (!response.ok) {
@@ -253,17 +253,6 @@ export const mockFilesApi = {
     }
 
     return await response.json();
-  },
-
-  linkFileToGoal: async (fileId: string, goalId: string): Promise<void> => {
-    const response = await apiCall(`/files/${fileId}/link-goal`, {
-      method: 'PATCH',
-      body: JSON.stringify({ goalId }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to link file to goal');
-    }
   },
 };
 

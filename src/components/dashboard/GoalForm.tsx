@@ -29,8 +29,8 @@ export function GoalForm({ userId, onGoalCreated, recentFiles = [] }: GoalFormPr
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      await mockGoalsApi.createGoal(userId, title, priority);
+      // Pass empty string for fileId since GoalForm doesn't handle file uploads
+      await mockGoalsApi.createGoal(userId, title, priority, '');
 
       toast({
         title: 'Goal created!',
